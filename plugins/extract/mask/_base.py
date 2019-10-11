@@ -217,7 +217,7 @@ class Masker(Extractor):
 
     def _configure_image_size(self, intended_model):
         """ Setup the intended image output sizes """
-        model_dir = get_folder(os.path.dirname(self.model_path))
+        model_dir = get_folder(os.path.dirname(__file__))
         model = PluginLoader.get_model(intended_model)(model_dir) # just pointing it anywhere
         feed_face_size = model.input_shape[0]
         ref_face_size = model.input_shape[0] # TODO fix this to output_shape

@@ -39,7 +39,7 @@ class Extract():
                                    multiprocess=not self.args.singleprocess,
                                    rotate_images=self.args.rotate_images,
                                    intended_model=self.args.intended_model,
-                                   coverage_ratio=.63,  # TODO load from training configs
+                                   coverage_ratio=.625,  # TODO load from training configs
                                    min_size=self.args.min_size,
                                    normalize_method=normalization)
         self.save_queue = queue_manager.get_queue("extract_save")

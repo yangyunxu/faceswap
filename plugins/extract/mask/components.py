@@ -43,10 +43,10 @@ class Mask(Masker):
         for feed, face, prediction in generator:
             face.image = np.concatenate((feed, prediction), axis=-1)
             face.load_feed_face(face.image,
-                                size=self.input_size,
-                                coverage_ratio=self.coverage_ratio)
+                                size=int(self.feed_face_size / self.coverage_ratio),
+                                coverage_ratio=1.)
             face.load_reference_face(face.image,
-                                     size=self.output_size,
+                                     size=self.ref_face_size,
                                      coverage_ratio=self.coverage_ratio)
         return batch
 
