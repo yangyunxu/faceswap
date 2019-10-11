@@ -58,19 +58,20 @@ class Extractor():
         :attr:`final_pass` to indicate to the caller which phase is being processed
     """
     def __init__(self, detector, aligner, masker, configfile=None,
-                 multiprocess=False, rotate_images=None, min_size=20,
-                 normalize_method=None):
+                 multiprocess=False, rotate_images=None, intended_model=None, coverage_ratio=None,
+                 min_size=20, normalize_method=None):
         logger.debug("Initializing %s: (detector: %s, aligner: %s, masker: %s, "
-                     "configfile: %s, multiprocess: %s, rotate_images: %s, min_size: %s, "
-                     "normalize_method: %s)",
+                     "configfile: %s, multiprocess: %s, rotate_images: %s, intended_model: %s, "
+                     "coverage_ratio: %s, min_size: %s, normalize_method: %s)",
                      self.__class__.__name__, detector, aligner, masker, configfile,
-                     multiprocess, rotate_images, min_size, normalize_method)
+                     multiprocess, rotate_images, intended_model, coverage_ratio,
+                     min_size, normalize_method)
         self.phase = "detect"
         self._queue_size = 32
         self._vram_buffer = 320  # Leave a buffer for VRAM allocation
         self._detector = self._load_detector(detector, rotate_images, min_size, configfile)
-        self._aligner = self._load_aligner(aligner, configfile, normalize_method)
-        self._masker = self._load_masker(masker, configfile)
+        self._aligner = self._load_aligner(aligner, normalize_method, configfile)
+        self._masker = self._load_masker(masker, intended_model, coverage_ratio, configfile)
         self._is_parallel = self._set_parallel_processing(multiprocess)
         self._set_extractor_batchsize()
         self._queues = self._add_queues()
@@ -322,20 +323,22 @@ class Extractor():
         return detector
 
     @staticmethod
-    def _load_aligner(aligner, configfile, normalize_method):
+    def _load_aligner(aligner, normalize_method, configfile):
         """ Set global arguments and load aligner plugin """
         aligner_name = aligner.replace("-", "_").lower()
         logger.debug("Loading Aligner: '%s'", aligner_name)
-        aligner = PluginLoader.get_aligner(aligner_name)(configfile=configfile,
-                                                         normalize_method=normalize_method)
+        aligner = PluginLoader.get_aligner(aligner_name)(normalize_method=normalize_method,
+                                                         configfile=configfile)
         return aligner
 
     @staticmethod
-    def _load_masker(masker, configfile):
+    def _load_masker(masker, intended_model, coverage_ratio, configfile):
         """ Set global arguments and load masker plugin """
         masker_name = masker.replace("-", "_").lower()
         logger.debug("Loading Masker: '%s'", masker_name)
-        masker = PluginLoader.get_masker(masker_name)(configfile=configfile)
+        masker = PluginLoader.get_masker(masker_name)(intended_model=intended_model,
+                                                      coverage_ratio=coverage_ratio,
+                                                      configfile=configfile)
         return masker
 
     def _launch_detector(self):

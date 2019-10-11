@@ -38,6 +38,8 @@ class Extract():
                                    configfile=configfile,
                                    multiprocess=not self.args.singleprocess,
                                    rotate_images=self.args.rotate_images,
+                                   intended_model=self.args.intended_model,
+                                   coverage_ratio=.63,  # TODO load from training configs
                                    min_size=self.args.min_size,
                                    normalize_method=normalization)
         self.save_queue = queue_manager.get_queue("extract_save")
@@ -177,7 +179,6 @@ class Extract():
     def run_extraction(self):
         """ Run Face Detection """
         to_process = self.process_item_count()
-        size = self.args.size if hasattr(self.args, "size") else 256
         exception = False
 
         for phase in range(self.extractor.passes):
@@ -202,7 +203,7 @@ class Extract():
                 filename = faces["filename"]
 
                 if self.extractor.final_pass:
-                    self.output_processing(faces, size, filename)
+                    self.output_processing(faces, filename)
                     self.output_faces(filename, faces)
                     if self.save_interval and (idx + 1) % self.save_interval == 0:
                         self.alignments.save()
@@ -223,7 +224,7 @@ class Extract():
         for thread in self.threads:
             thread.check_and_raise_error()
 
-    def output_processing(self, faces, size, filename):
+    def output_processing(self, faces, filename):
         """ Prepare faces for output """
         final_faces = list()
         for detected_face in faces["detected_faces"]:

@@ -57,7 +57,7 @@ class Detector(Extractor):
     """
 
     def __init__(self, git_model_id=None, model_filename=None,
-                 configfile=None, rotation=None, min_size=0):
+                 rotation=None, min_size=0, configfile=None):
         logger.debug("Initializing %s: (rotation: %s, min_size: %s)", self.__class__.__name__,
                      rotation, min_size)
         super().__init__(git_model_id,

@@ -14,7 +14,7 @@ class Mask(Masker):
         model_filename = "Nirkin_500_softmax_v1.h5"
         super().__init__(git_model_id=git_model_id, model_filename=model_filename, **kwargs)
         self.name = "VGG Mask Network(500)"
-        self.input_size = 500
+        self.mask_model_input_size = 500
         self.colorformat = "BGR"
         self.vram = 3000  # TODO determine
         self.vram_warnings = 1024  # TODO determine
@@ -27,15 +27,17 @@ class Mask(Masker):
         o = keras.layers.core.Activation('softmax',
                                          name='softmax')(self.model._model.layers[-1].output)
         self.model._model = keras.models.Model(inputs=self.model._model.input, outputs=[o])
-        self.input = np.zeros((self.batchsize, self.input_size, self.input_size, 3),
-                              dtype="float32")
+        self.input = np.zeros((self.batchsize,
+                               self.mask_model_input_size,
+                               self.mask_model_input_size,
+                               3), dtype="float32")
         self.model.predict(self.input)
 
     def process_input(self, batch):
         """ Compile the detected faces for prediction """
         for index, face in enumerate(batch["detected_faces"]):
             face.load_aligned(face.image,
-                              size=self.input_size,
+                              size=self.mask_model_input_size,
                               dtype='float32')
             self.input[index] = face.aligned["face"][..., :3]
         batch["feed"] = self.input - np.mean(self.input, axis=(1, 2))[:, None, None, :]
@@ -56,15 +58,15 @@ class Mask(Masker):
             predicted[predicted > 245.] = 255.
 
             face.load_feed_face(face.image,
-                                size=self.input_size,
-                                coverage_ratio=self.coverage_ratio)
+                                size=int(self.feed_face_size / self.coverage_ratio),
+                                coverage_ratio=1.)
             feed_face = face.feed["face"][..., :3]
             feed_mask = self._resize(predicted, self.input_size).astype('uint8')
             batch["detected_faces"][idx].feed["face"] = np.concatenate((feed_face,
                                                                         feed_mask),
                                                                        axis=-1)
             face.load_reference_face(face.image,
-                                     size=self.output_size,
+                                     size=self.ref_face_size,
                                      coverage_ratio=self.coverage_ratio)
             ref_face = face.reference["face"][..., :3]
             ref_mask = self._resize(predicted, self.output_size).astype('uint8')

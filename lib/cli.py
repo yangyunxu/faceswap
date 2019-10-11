@@ -701,16 +701,15 @@ class ExtractArgs(ExtractConvertArgs):
                                       "when extracting faces. For example a value of 1 will "
                                       "extract faces from every frame, a value of 10 will extract "
                                       "faces from every 10th frame."})
-        argument_list.append({"opts": ("-sz", "--size"),
-                              "type": int,
-                              "action": Slider,
-                              "min_max": (128, 512),
-                              "default": 256,
-                              "rounding": 64,
+        argument_list.append({"opts": ("-im", "--intended-model"),
+                              "type": str.lower,
+                              "choices": PluginLoader.get_available_models(),
+                              "default": PluginLoader.get_default_model(),
                               "group": "output",
-                              "help": "The output size of extracted faces. Make sure that the "
-                                      "model you intend to train supports your required size. "
-                                      "This will only need to be changed for hi-res models."})
+                              "help": "The output size of extracted faces will be tailored to the "
+                                      "input size of the intended training model. Make sure that "
+                                      "the coverage_ratio in Settings -> Configure Train Plugins "
+                                      "is also configured."})
         argument_list.append({"opts": ("-si", "--save-interval"),
                               "dest": "save_interval",
                               "type": int,

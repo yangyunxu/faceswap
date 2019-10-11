@@ -54,7 +54,7 @@ class Aligner(Extractor):
     """
 
     def __init__(self, git_model_id=None, model_filename=None,
-                 configfile=None, normalize_method=None):
+                 normalize_method=None, configfile=None):
         logger.debug("Initializing %s: (normalize_method: %s)", self.__class__.__name__,
                      normalize_method)
         super().__init__(git_model_id,

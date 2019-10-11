@@ -20,9 +20,10 @@ For each source item, the plugin must pass a dict to finalize containing:
 
 import cv2
 import numpy as np
-
+import os
 from plugins.extract._base import Extractor, logger
-
+from plugins.plugin_loader import PluginLoader
+from lib.utils import get_folder
 # TODO output_size, coverage_ratio
 
 
@@ -54,14 +55,15 @@ class Masker(Extractor):
     plugins.extract.align._base : Aligner parent class for extraction plugins.
     """
 
-    def __init__(self, git_model_id=None, model_filename=None, configfile=None):
-        logger.debug("Initializing %s: (configfile: %s, )", self.__class__.__name__, configfile)
+    def __init__(self, git_model_id=None, model_filename=None, intended_model=None,
+                 coverage_ratio=None, configfile=None):
+        logger.debug("Initializing %s: (configfile: %s, intended_model: %s, coverage_ratio: %s)",
+                     self.__class__.__name__, intended_model, coverage_ratio, configfile)
         super().__init__(git_model_id,
                          model_filename,
-                         configfile=configfile)
-        self.input_size = 256  # Overide for model specific input_size
-        self.output_size = 256  # Overide for model specific output_size
-        self.coverage_ratio = 1.0  # Overide for model specific coverage_ratio
+                         configfile=configfile)  #TODO config file needed ?
+        self.feed_face_size, self.ref_face_size = self._configure_image_size(intended_model)
+        self.coverage_ratio = coverage_ratio  # TODO feed in from train config - > extract - > pipeline
 
         self._plugin_type = "mask"
         self._faces_per_filename = dict()  # Tracking for recompiling face batches
@@ -212,3 +214,11 @@ class Masker(Extractor):
         resized = cv2.resize(image, (0, 0), fx=scale, fy=scale, interpolation=method)
         resized = resized if channels > 1 else resized[..., None]
         return resized
+
+    def _configure_image_size(self, intended_model):
+        """ Setup the intended image output sizes """
+        model_dir = get_folder(os.path.dirname(self.model_path))
+        model = PluginLoader.get_model(intended_model)(model_dir) # just pointing it anywhere
+        feed_face_size = model.input_shape[0]
+        ref_face_size = model.input_shape[0] # TODO fix this to output_shape
+        return feed_face_size, ref_face_size
